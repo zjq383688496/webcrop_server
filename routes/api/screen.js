@@ -1,7 +1,9 @@
 const fs        = require('fs')
 const child     = require('child_process')
 const phantomjs = require('phantomjs-prebuilt')
+const model = require('phantomjs-prebuilt')
 const router = require('koa-router')()
+
 router.prefix('/screen')
 
 const format = {
