@@ -1,60 +1,32 @@
-var page = require('webpage').create()
-// page.open('https://www.jd.com/', function(status) {
-// 	console.log('======= status =======')
-// 	console.log(status)
-// 	page.render('jd.png')
-// 	phantom.exit()
-// })
-// page.evaluate(function() {
-// 	window.scrollTo(0, 10000)
-// 	console.log(document.title)
-// })
+const Koa        = require('koa')
+const app        = new Koa()
+const json       = require('koa-json')
+const onerror    = require('koa-onerror')
+const bodyparser = require('koa-bodyparser')
+const logger     = require('koa-logger')
 
-var array  = []
+const config     = require('./config')
 
-page.settings = {
-	javascriptEnabled: true,
-	loadImages: true
-}
-page.viewportSize = { width: 1200, height: 10000 }
-page.onResourceRequested = function(requestData, networkRequest) {
-	array.push(requestData.id)
-}
+// 错误处理
+onerror(app)
 
-page.onResourceReceived = function(response) {
-	var index = array.indexOf(response.id)
-	array.splice(index, 1)
-}
+// 中间件
+app.use(bodyparser({
+	enableTypes:['json', 'form', 'text'],
+	formLimit: '5mb',
+	jsonLimit: '5mb',
+	textLimit: '5mb',
+}))
+app.use(json())
+app.use(logger())
+app.use(require('koa-static')(__dirname + '/public'))
 
-page.evaluate(function() {
-	window.scrollTo(0, 20000)
+// 路由
+require('./config.routes')(app)
+
+// error-handling
+app.on('error', (err, ctx) => {
+	console.error('服务器 错误', err, ctx)
 })
 
-page.open('https://www.jd.com/', function(status) {
-	console.log(status)
-	page.evaluate(function() {
-		// document.body.innerHTML = ''
-		window.scrollTo(0, 20000)
-	})
-	// setTimeout(function() {
-	// 	page.render('jd.png')
-	// 	console.log(status)
-	// 	phantom.exit()
-	// }, 30000)
-	var interval = setInterval(function () {
-		// page.evaluate(function() {
-		// 	document.body.innerHTML = ''
-		// 	window.scrollTo(0, 20000)
-		// })
-		if(array.length === 0) {
-			clearInterval(interval)
-			// setTimeout(function() {
-				page.render('jd.png', { format: 'jpeg', quality: '100' })
-
-				// page.render('taobao.png')
-				console.log(status)
-				phantom.exit()
-			// }, 10000)
-		}
-	}, 100)
-})
+module.exports = app

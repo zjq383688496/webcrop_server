@@ -5,10 +5,18 @@
   "repository": "https://github.com/zjq383688496/webcrop_server.git",
   "author": "zjq383688496 <zjq383688496@gmail.com>",
   "license": "MIT",
-  "script": {
-    "phantomjs": "node_modules/.bin/phantomjs"
+  "scripts": {
+    "phantomjs": "node_modules/.bin/phantomjs",
+    "start": "nodemon bin/www"
   },
-  "devDependencies": {
+  "dependencies": {
+    "koa": "^2.5.0",
+    "koa-bodyparser": "^4.2.0",
+    "koa-json": "^2.0.2",
+    "koa-logger": "^3.2.0",
+    "koa-onerror": "^4.0.0",
+    "koa-router": "^7.4.0",
+    "koa-static": "^4.0.2",
     "phantomjs-prebuilt": "^2.1.16"
   }
 }
