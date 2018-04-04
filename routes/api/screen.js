@@ -15,47 +15,8 @@ const format = {
 	png: 1,
 }
 
-// 'https://www.baidu.com'
+router.get('/create.:format',  screen.create())
 
-function result() {
-	const bin = phantomjs.path
-	return async (ctx, next) => {
-		screen.regChildProgess()
-		const params = ctx.params
-		const query  = ctx.query
-		if (!format[params.format] || !query.url) return next()
-		const args     = childArgsFn(ctx, query.url, params.format, query.type, query.q)
-		const htmlFile = await (new Promise((resolve, reject) => {
-			return child.execFile(bin, args.args, (err, stdout, stderr) => {
-				if (err || stderr) {
-					reject('err || stderr')
-				}
-				// fs.readFile(args.path, (err, data) => {
-				// 	if (err) reject(err)
-				// 	else {
-				// 		fs.unlinkSync(args.path)
-				// 		resolve(data)
-				// 	}
-				// })
-				resolve({ url: `${ctx.origin}/${args.path}` })
-			})
-		}))
-		ctx.type = 'jpg'
-		ctx.body = htmlFile
-	}
-}
-
-// router.get('/crop.:format', result())
-router.get('/crop.:format', screen.regChildProgess())
-
-
-
-function childArgsFn(ctx, url, format = 'jpeg', type = '0', name = `file_${Date.now()}`, q = 80) {
-	var path = 'img/'
-	return {
-		path: `${path}${name}.${format.replace('jpeg', 'jpg')}`,
-		args: [ `${ctx.cfg.capture}`, url, format, type, name, q ],
-	}
-}
+router.get('/preview.:format', screen.preview())
 
 module.exports = router

@@ -1,10 +1,9 @@
 var system   = require('system'),
 	page     = require('webpage').create(),
-	array    = []
+	array    = [],
+	settings
 
 console.log(system.args)
-var settings = {
-}
 
 // 获取系统参数
 var args     = system.args,
@@ -16,7 +15,8 @@ var args     = system.args,
 	width    = args[6]*1,	// 参数6: 宽度
 	height   = args[7]*1,	// 参数7: 高度
 	scale    = args[8]*1,	// 参数8: 缩放倍率
-	loadTime = args[9]*1	// 参数9: 页面加载延迟(ms)
+	timeout  = args[9]*1	// 参数9: 资源过期时间(ms)
+	loadTime = args[10]*1	// 参数10: 页面加载延迟(ms)
 
 console.log(url === '')
 
@@ -32,7 +32,7 @@ var ua = {
 }
 var view = {
 	0: {
-		width:  width  || 1440,
+		width:  width  || 1280,
 		height: height || 1080
 	},
 	1: {
@@ -50,15 +50,17 @@ page.clipRect = {
 	width:  view.width  * scale,
 	height: view.height * scale
 }
-// console.log((view.width - view.width  * scale) / 2)
-// console.log(view.width  * scale)
-// console.log(view.height * scale)
-page.settings = {
+console.log((view.width - view.width  * scale) / 2)
+console.log(view.width  * scale)
+console.log(view.height * scale)
+settings = {
 	javascriptEnabled: true,	// 允许加载JS
 	loadImages: true,			// 允许加载图片
-	userAgent: ua[type],		// 使用userAgent
-	resourceTimeout: 10000,		// 超时时间
+	userAgent: ua[type]			// 使用userAgent
+	// XSSAuditingEnabled: true
 }
+if (timeout) settings.resourceTimeout = timeout * 1000
+page.settings = settings
 page.viewportSize = {
 	width:  view.width,
 	height: view.height * 2
@@ -88,7 +90,7 @@ page.open(url, settings, function(status) {
 			setTimeout(function() {
 				page.render('public/img/' + fileName + '.' + format.replace('jpeg', 'jpg'), { format: format, quality: quality })
 				phantom.exit()
-			}, loadTime)
+			}, loadTime * 1000)
 		}
 	}, 100)
 })

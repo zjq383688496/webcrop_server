@@ -1,7 +1,9 @@
 const config      = require('../config')
+const fs          = require('fs')
 const path        = require('path')
 const execFile    = require('child_process').execFile
 const phantomPath = require('phantomjs-prebuilt').path
+const hashFile    = require('../utils/hashfile')
 const execPath    = config.capture
 
 const formatMap = {
@@ -11,7 +13,7 @@ const formatMap = {
 
 const screenCapture = {
 	// 注册phantomjs进程
-	regChildProgess() {
+	regChildProgess(cb) {
 		return async (ctx, next) => {
 			let me       = this,
 				params   = ctx.params
@@ -22,14 +24,15 @@ const screenCapture = {
 
 			let type     = query.t || '0',
 				fileName = `file_${Date.now()}`,
-				quality  = query.q || 80,
-				width    = query.w || 0,
-				height   = query.h || 0,
-				scale    = query.s || 1,
-				loadTime = query.l || 0,
+				quality  = query.q  || 80,
+				width    = query.w  || 0,
+				height   = query.h  || 0,
+				scale    = query.s  || 1,
+				timeout  = query.to || 0,
+				loadTime = query.lt || 0,
 				filePath = path.resolve(__dirname, `../public/img/${fileName}.${format.replace('jpeg', 'jpg')}`),
-
-				process = await (new Promise((resolve, reject) => {
+				sTime    = Date.now(), screenTime, hashTime,
+				process  = await (new Promise((resolve, reject) => {
 					execFile(phantomPath, [
 						execPath,
 						url,
@@ -40,21 +43,55 @@ const screenCapture = {
 						width,
 						height,
 						scale,
+						timeout,
 						loadTime,
 					], (err, stdout, stderr) => {
-						console.log(stdout)
 						if (err || stderr) reject(err || stderr)
-						// var code = stdout.replace(/[\r\n]/g, '')
 						console.log('phantomjs - 子进程已退出')
-						resolve({ url: filePath })
+						screenTime = Date.now() - sTime
+						sTime      = Date.now()
+						console.log(`截图耗时 ${screenTime}ms`)
+						cb && cb(filePath, screenTime, sTime, reject, resolve)
+						// hashFile(filePath, (err, npath) => {
+						// 	if (err) reject(err)
+						// 	hashTime = Date.now() - sTime
+						// 	resolve({
+						// 		url: npath,
+						// 		screenTime: screenTime,
+						// 		hashTime: hashTime,
+						// 		fullTime: screenTime + hashTime
+						// 	})
+						// })
 					})
 				}))
 			ctx.type = 'jpg'
 			ctx.body = process
-			// process.on('exit', code => {
-			// 	console.log('phantomjs - 子进程已退出')
-			// })
 		}
+	},
+	create() {
+		return this.regChildProgess((filePath, screenTime, sTime, reject, resolve) => {
+			hashFile(filePath, (err, npath) => {
+				if (err) reject(err)
+				var hashTime = Date.now() - sTime
+				resolve({
+					url: npath,
+					screenTime: screenTime,
+					hashTime: hashTime,
+					fullTime: screenTime + hashTime
+				})
+			})
+		})
+	},
+	preview() {
+		return this.regChildProgess((filePath, screenTime, sTime, reject, resolve) => {
+			fs.readFile(filePath, (err, data) => {
+				if (err) reject(err)
+				else {
+					fs.unlinkSync(filePath)
+					resolve(data)
+				}
+			})
+		})
 	}
 }
 
