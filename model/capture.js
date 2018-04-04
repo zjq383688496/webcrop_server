@@ -7,12 +7,16 @@ var settings = {
 }
 
 // 获取系统参数
-var args   = system.args,
-	url    = args[1],		// 参数1: url
-	format = args[2],		// 参数2: 保存格式
-	type   = args[3],		// 参数3: 类型 0: 默认 1: 移动端
-	file   = args[4],		// 参数4: 文件名
-	q      = args[5]		// 参数4: 质量
+var args     = system.args,
+	url      = args[1],		// 参数1: url
+	format   = args[2],		// 参数2: 保存格式
+	type     = args[3],		// 参数3: 类型 0: 默认 1: 移动端
+	fileName = args[4],		// 参数4: 文件名
+	quality  = args[5]*1,	// 参数5: 质量
+	width    = args[6]*1,	// 参数6: 宽度
+	height   = args[7]*1,	// 参数7: 高度
+	scale    = args[8]*1,	// 参数8: 缩放倍率
+	loadTime = args[9]*1	// 参数9: 页面加载延迟(ms)
 
 console.log(url === '')
 
@@ -21,38 +25,44 @@ if (url === '') {
 	phantom.exit()
 }
 
-// 功能设置
+// 功能设置 根据type
 var ua = {
 	0: 'mozilla/5.0 (macintosh; intel mac os x 10_13_0) applewebkit/537.36 (khtml, like gecko) chrome/65.0.3325.181 safari/537.36',
 	1: 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.20 (KHTML, like Gecko) Mobile/7B298g'
-},
-view = {
+}
+var view = {
 	0: {
-		width: 1440,
-		height: 1080
+		width:  width  || 1440,
+		height: height || 1080
 	},
 	1: {
-		width: 375,
-		height: 667
+		width:  width  || 375,
+		height: height || 667
 	}
 }
 
-// page.zoomFactor = 0.5
 view = view[type]
+page.zoomFactor = scale
 
 page.clipRect = {
 	top:  0,
-	left: 0,
-	width:  view.width,
-	height: view.height
+	left: (view.width - view.width  * scale) / 2,
+	width:  view.width  * scale,
+	height: view.height * scale
 }
+// console.log((view.width - view.width  * scale) / 2)
+// console.log(view.width  * scale)
+// console.log(view.height * scale)
 page.settings = {
 	javascriptEnabled: true,	// 允许加载JS
 	loadImages: true,			// 允许加载图片
 	userAgent: ua[type],		// 使用userAgent
 	resourceTimeout: 10000,		// 超时时间
 }
-page.viewportSize = view
+page.viewportSize = {
+	width:  view.width,
+	height: view.height * 2
+}
 page.onResourceRequested = function(requestData, networkRequest) {
 	array.push(requestData.id)
 }
@@ -62,21 +72,23 @@ page.onResourceReceived = function(response) {
 	array.splice(index, 1)
 }
 
-page.evaluate(function() {
-	window.scrollTo(0, view.height)
-})
+page.evaluate(function(h) {
+	window.scrollTo(0, h)
+}, view.height)
 
 page.open(url, settings, function(status) {
 	console.log(status)
-	page.evaluate(function() {
-		window.scrollTo(0, view.height)
-	})
+	page.evaluate(function(h) {
+		window.scrollTo(0, h)
+	}, view.height)
 	var interval = setInterval(function () {
 		console.log(array.length)
 		if (array.length === 0) {
 			clearInterval(interval)
-			page.render('public/img/' + file + '.' + format.replace('jpeg', 'jpg'), { format: format, quality: q })
-			phantom.exit()
+			setTimeout(function() {
+				page.render('public/img/' + fileName + '.' + format.replace('jpeg', 'jpg'), { format: format, quality: quality })
+				phantom.exit()
+			}, loadTime)
 		}
 	}, 100)
 })

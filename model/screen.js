@@ -2,38 +2,58 @@ const config      = require('../config')
 const path        = require('path')
 const execFile    = require('child_process').execFile
 const phantomPath = require('phantomjs-prebuilt').path
-const execPath    = path.resolve(__dirname, './capture.js')
+const execPath    = config.capture
 
-
-function childArgs(ctx, url, format = 'jpeg', type = '0', name = `file_${Date.now()}`, q = 80) {
-	var path = 'img/'
-	return {
-		path: `${path}${name}.${format.replace('jpeg', 'jpg')}`,
-		args: [ `${ctx.cfg.root}/crop.js`, url, format, type, name, q ],
-	}
+const formatMap = {
+	jpg: 1,
+	png: 1,
 }
 
-const screenCapture {
+const screenCapture = {
 	// 注册phantomjs进程
-	regChildProgess(params) {
-		return async () => {
-			let me = this,
-				url = `${params.url}`,
-				height = params.height || 1000,
-				format = params.format || 1,
-				fileName = `${key}.jpg`,
-				filePath = path.resolve(__dirname, `../public/img/${fileName}`),
+	regChildProgess() {
+		return async (ctx, next) => {
+			let me       = this,
+				params   = ctx.params
+				query    = ctx.query
+				url      = query.url,
+				format   = params.format || 'jpeg'
+			if (!formatMap[format] || !url) return next()
+
+			let type     = query.t || '0',
+				fileName = `file_${Date.now()}`,
+				quality  = query.q || 80,
+				width    = query.w || 0,
+				height   = query.h || 0,
+				scale    = query.s || 1,
+				loadTime = query.l || 0,
+				filePath = path.resolve(__dirname, `../public/img/${fileName}.${format.replace('jpeg', 'jpg')}`),
 
 				process = await (new Promise((resolve, reject) => {
-					execPath(phantomPath, [execPath, url, filePath, height], (err, stdout, stderr) => {
+					execFile(phantomPath, [
+						execPath,
+						url,
+						format,
+						type,
+						fileName,
+						quality,
+						width,
+						height,
+						scale,
+						loadTime,
+					], (err, stdout, stderr) => {
+						console.log(stdout)
 						if (err || stderr) reject(err || stderr)
-						var code = stdout.replace(/[\r\n]/g, '')
-						if (code === 'success') resolve(code)
+						// var code = stdout.replace(/[\r\n]/g, '')
+						console.log('phantomjs - 子进程已退出')
+						resolve({ url: filePath })
 					})
 				}))
-			process.on('exit', code => {
-				console.log('phantomjs - 子进程已退出')
-			})
+			ctx.type = 'jpg'
+			ctx.body = process
+			// process.on('exit', code => {
+			// 	console.log('phantomjs - 子进程已退出')
+			// })
 		}
 	}
 }
