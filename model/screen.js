@@ -1,7 +1,17 @@
+const config      = require('../config')
 const path        = require('path')
 const execFile    = require('child_process').execFile
 const phantomPath = require('phantomjs-prebuilt').path
 const execPath    = path.resolve(__dirname, './capture.js')
+
+
+function childArgs(ctx, url, format = 'jpeg', type = '0', name = `file_${Date.now()}`, q = 80) {
+	var path = 'img/'
+	return {
+		path: `${path}${name}.${format.replace('jpeg', 'jpg')}`,
+		args: [ `${ctx.cfg.root}/crop.js`, url, format, type, name, q ],
+	}
+}
 
 const screenCapture {
 	// 注册phantomjs进程
