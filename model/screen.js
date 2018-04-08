@@ -51,17 +51,7 @@ const screenCapture = {
 						screenTime = Date.now() - sTime
 						sTime      = Date.now()
 						console.log(`截图耗时 ${screenTime}ms`)
-						cb && cb(filePath, screenTime, sTime, reject, resolve)
-						// hashFile(filePath, (err, npath) => {
-						// 	if (err) reject(err)
-						// 	hashTime = Date.now() - sTime
-						// 	resolve({
-						// 		url: npath,
-						// 		screenTime: screenTime,
-						// 		hashTime: hashTime,
-						// 		fullTime: screenTime + hashTime
-						// 	})
-						// })
+						cb && cb(filePath, reject, resolve, screenTime, sTime)
 					})
 				}))
 			ctx.type = 'jpg'
@@ -69,7 +59,7 @@ const screenCapture = {
 		}
 	},
 	create() {
-		return this.regChildProgess((filePath, screenTime, sTime, reject, resolve) => {
+		return this.regChildProgess((filePath, reject, resolve, screenTime, sTime) => {
 			hashFile(filePath, (err, npath) => {
 				if (err) reject(err)
 				var hashTime = Date.now() - sTime
@@ -83,7 +73,7 @@ const screenCapture = {
 		})
 	},
 	preview() {
-		return this.regChildProgess((filePath, screenTime, sTime, reject, resolve) => {
+		return this.regChildProgess((filePath, reject, resolve) => {
 			fs.readFile(filePath, (err, data) => {
 				if (err) reject(err)
 				else {
