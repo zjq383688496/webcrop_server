@@ -3,6 +3,7 @@ const fs          = require('fs')
 const path        = require('path')
 const execFile    = require('child_process').execFile
 const phantomPath = require('phantomjs-prebuilt').path
+const ajax        = require('../utils/ajax')
 const hashFile    = require('../utils/hashfile')
 const execPath    = config.capture
 
@@ -51,7 +52,7 @@ const screenCapture = {
 						screenTime = Date.now() - sTime
 						sTime      = Date.now()
 						console.log(`截图耗时 ${screenTime}ms`)
-						cb && cb(filePath, reject, resolve, screenTime, sTime)
+						cb && cb(format, filePath, reject, resolve, screenTime, sTime)
 					})
 				}))
 			ctx.type = 'jpg'
@@ -59,21 +60,41 @@ const screenCapture = {
 		}
 	},
 	create() {
-		return this.regChildProgess((filePath, reject, resolve, screenTime, sTime) => {
-			hashFile(filePath, (err, npath) => {
+		return this.regChildProgess((format, filePath, reject, resolve, screenTime, sTime) => {
+			// hashFile(filePath, (err, npath) => {
+			// 	if (err) reject(err)
+			// 	var imgBuf    = fs.readFileSync(filePath),
+			// 		imgBase64 = `data:image/${format === 'png'? 'png': 'jpeg'};base64,${imgBuf.toString('base64')}`,
+			// 		hashTime  = Date.now() - sTime
+			// 	ajax.post(config.imgUpload, { imageBase64: imgBase64 }, (err, data) => {
+			// 		if (err) reject(err)
+			// 		console.log(data)
+			// 		resolve({
+			// 			url: npath,
+			// 			screenTime: screenTime,
+			// 			hashTime: hashTime,
+			// 			fullTime: screenTime + hashTime
+			// 		})
+			// 	})
+			// })
+			fs.readFile(filePath, (err, data) => {
 				if (err) reject(err)
-				var hashTime = Date.now() - sTime
-				resolve({
-					url: npath,
-					screenTime: screenTime,
-					hashTime: hashTime,
-					fullTime: screenTime + hashTime
+				var imgBase64 = `data:image/${format === 'png'? 'png': 'jpeg'};base64,${data.toString('base64')}`,
+					hashTime  = Date.now() - sTime
+				ajax.post(config.imgUpload, { imageBase64: imgBase64 }, (err, data) => {
+					if (err) reject(err)
+					console.log(data)
+					data.result.screenTime = screenTime
+					data.result.hashTime   = hashTime
+					data.result.fullTime   = screenTime + hashTime
+					fs.unlinkSync(filePath)
+					resolve(data)
 				})
 			})
 		})
 	},
 	preview() {
-		return this.regChildProgess((filePath, reject, resolve) => {
+		return this.regChildProgess((format, filePath, reject, resolve) => {
 			fs.readFile(filePath, (err, data) => {
 				if (err) reject(err)
 				else {

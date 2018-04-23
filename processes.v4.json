@@ -1,0 +1,16 @@
+{
+  "apps": [{
+    "name": "corp.v4.rongyi.com",
+    "script": "bin/www",
+    "watch": false,
+    "ignoreWatch": ["node_modules","public"],
+    "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+    "out_file": "log/node.log",
+    "error_file": "log/node.err",
+    "exec_mode": "cluster",
+    "instances" : 0,
+    "env": {
+      "NODE_ENV": "v4"
+    }
+  }]
+}
